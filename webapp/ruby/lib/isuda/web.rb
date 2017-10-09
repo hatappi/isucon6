@@ -18,7 +18,7 @@ module Isuda
     set :erb, escape_html: true
     set :public_folder, File.expand_path('../../../../public', __FILE__)
     set :db_user, ENV['ISUDA_DB_USER'] || 'root'
-    set :db_password, ENV['ISUDA_DB_PASSWORD'] || ''
+    set :db_password, ENV['ISUDA_DB_PASSWORD'] || 'root'
     set :dsn, ENV['ISUDA_DSN'] || 'dbi:mysql:db=isuda'
     set :session_secret, 'tonymoris'
     set :isupam_origin, ENV['ISUPAM_ORIGIN'] || 'http://localhost:5050'
@@ -90,7 +90,6 @@ module Isuda
       end
 
       def htmlify(content)
-        keywords = db.xquery(%| select * from entry order by character_length(keyword) desc |)
         pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
         kw2hash = {}
         hashed_content = content.gsub(/(#{pattern})/) {|m|
@@ -140,24 +139,26 @@ module Isuda
       per_page = 10
       page = (params[:page] || 1).to_i
 
+      # entries を cacheできそう
       entries = db.xquery(%|
         SELECT * FROM entry
         ORDER BY updated_at DESC
         LIMIT #{per_page}
         OFFSET #{per_page * (page - 1)}
       |)
+      keywords = db.xquery(%| select keyword from entry|).sort{ |entry| entry[:keyword].size }.reverse
+
+      # starsの検索を、まとめてやれそう。
       entries.each do |entry|
-        entry[:html] = htmlify(entry[:description])
+        entry[:html] = htmlify(keywords, entry[:description])
         entry[:stars] = load_stars(entry[:keyword])
       end
 
       total_entries = db.xquery(%| SELECT count(*) AS total_entries FROM entry |).first[:total_entries].to_i
-
       last_page = (total_entries.to_f / per_page.to_f).ceil
       from = [1, page - 5].max
       to = [last_page, page + 5].min
       pages = [*from..to]
-
       locals = {
         entries: entries,
         page: page,
@@ -229,9 +230,10 @@ module Isuda
     get '/keyword/:keyword', set_name: true do
       keyword = params[:keyword] or halt(400)
 
-      entry = db.xquery(%| select * from entry where keyword = ? |, keyword).first or halt(404)
+      entry = db.xquery(%| select keyword, description from entry where keyword = ? |, keyword).first or halt(404)
+      keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc |)
       entry[:stars] = load_stars(entry[:keyword])
-      entry[:html] = htmlify(entry[:description])
+      entry[:html] = htmlify(keywords, entry[:description])
 
       locals = {
         entry: entry,

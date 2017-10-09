@@ -49,8 +49,8 @@ module Isutar
     end
 
     get '/stars' do
-      keyword = params[:keyword] || ''
-      stars = db.xquery(%| select * from star where keyword = ? |, keyword).to_a
+      keyword = params[:keywords] || ''
+      stars = db.xquery(%| select user_name from star where keyword ? |, keyword).to_a
 
       content_type :json
       JSON.generate(stars: stars)
