@@ -9,6 +9,7 @@ require 'mysql2-cs-bind'
 require 'rack/utils'
 require 'sinatra/base'
 require 'tilt/erubis'
+require 'pry'
 
 module Isuda
   class Web < ::Sinatra::Base
@@ -22,7 +23,6 @@ module Isuda
     set :dsn, ENV['ISUDA_DSN'] || 'dbi:mysql:db=isuda'
     set :session_secret, 'tonymoris'
     set :isupam_origin, ENV['ISUPAM_ORIGIN'] || 'http://localhost:5050'
-    set :isutar_origin, ENV['ISUTAR_ORIGIN'] || 'http://localhost:5001'
 
     configure :development do
       require 'sinatra/reloader'
@@ -112,12 +112,7 @@ module Isuda
       end
 
       def load_stars(keyword)
-        isutar_url = URI(settings.isutar_origin)
-        isutar_url.path = '/stars'
-        isutar_url.query = URI.encode_www_form(keyword: keyword)
-        body = Net::HTTP.get(isutar_url)
-        stars_res = JSON.parse(body)
-        stars_res['stars']
+        db.xquery(%| select * from star where keyword = ? |, keyword).to_a
       end
 
       def redirect_found(path)
@@ -127,10 +122,26 @@ module Isuda
 
     get '/initialize' do
       db.xquery(%| DELETE FROM entry WHERE id > 7101 |)
-      isutar_initialize_url = URI(settings.isutar_origin)
-      isutar_initialize_url.path = '/initialize'
-      Net::HTTP.get_response(isutar_initialize_url)
+      db.xquery('TRUNCATE star')
+      content_type :json
+      JSON.generate(result: 'ok')
+    end
 
+    get '/stars' do
+      keyword = params[:keyword] || ''
+      stars = db.xquery(%| select * from star where keyword = ? |, keyword).to_a
+      content_type :json
+      JSON.generate(stars: stars)
+    end
+
+    post '/stars' do
+      keyword = params[:keyword]
+      db.xquery(%| select keyword, description from entry where keyword = ? |, keyword).first or halt(404)
+      user_name = params[:user]
+      db.xquery(%|
+        INSERT INTO star (keyword, user_name, created_at)
+        VALUES (?, ?, NOW())
+      |, keyword, user_name)
       content_type :json
       JSON.generate(result: 'ok')
     end
@@ -147,13 +158,11 @@ module Isuda
         OFFSET #{per_page * (page - 1)}
       |)
       keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc |)
-
       # starsの検索を、まとめてやれそう。
       entries.each do |entry|
         entry[:html] = htmlify(keywords, entry[:description])
         entry[:stars] = load_stars(entry[:keyword])
       end
-
       total_entries = db.xquery(%| SELECT count(*) AS total_entries FROM entry |).first[:total_entries].to_i
       last_page = (total_entries.to_f / per_page.to_f).ceil
       from = [1, page - 5].max
@@ -255,3 +264,6 @@ module Isuda
     end
   end
 end
+
+# work with local
+# Isuda::Web.run!
