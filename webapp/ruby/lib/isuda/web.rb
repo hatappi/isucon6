@@ -28,6 +28,7 @@ module Isuda
     set :session_secret, 'tonymoris'
     set :isupam_origin, ENV['ISUPAM_ORIGIN'] || 'http://localhost:5050'
     set :encoded_html_by_keyword, {}
+    set :html_description, {}
     set :pattern, ""
 
     configure :development do
@@ -95,7 +96,9 @@ module Isuda
         ! validation['valid']
       end
 
-      def htmlify(pattern, content)
+      def htmlify(pattern, content, id)
+        return settings.html_description[id] if settings.html_description[id]
+
         escaped_content = content.gsub(/(#{pattern})/) {|m|
           matched_keyword = $1
           unless settings.encoded_html_by_keyword[matched_keyword]
@@ -105,7 +108,8 @@ module Isuda
           end
           '<a href="%s">%s</a>' % settings.encoded_html_by_keyword[matched_keyword]
         }
-        escaped_content.gsub(/\n/, "<br />\n")
+
+        settings.html_description[id] = escaped_content.gsub(/\n/, "<br />\n")
       end
 
       def uri_escape(str)
@@ -161,9 +165,8 @@ module Isuda
       # starsの検索を、まとめてやれそう。
       
       pattern = settings.pattern
-
       entries.each do |entry|
-        entry[:html] = htmlify(pattern, entry[:description])
+        entry[:html] = htmlify(pattern, entry[:description],entry[:id])
         entry[:stars] = stars.select{|s| s[:keyword] == entry[:keyword]}
       end
 
@@ -236,7 +239,6 @@ module Isuda
         ON DUPLICATE KEY UPDATE
         author_id = ?, keyword = ?, description = ?, updated_at = NOW()
       |, *bound)
-
       keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc |)
       settings.pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
 
@@ -246,22 +248,19 @@ module Isuda
     get '/keyword/:keyword', set_name: true do
       keyword = params[:keyword] or halt(400)
       stars = db.xquery(%| select keyword, user_name from star where keyword =? |, keyword).to_a
-      entry = db.xquery(%| select keyword, description from entry where keyword = ? |, keyword).first or halt(404)
+      entry = db.xquery(%| select id, keyword, description from entry where keyword = ? |, keyword).first or halt(404)
       pattern = settings.pattern
-
       entry[:stars] = stars
-      entry[:html] = htmlify(pattern, entry[:description])
+      entry[:html] = htmlify(pattern, entry[:description], entry[:id])
       erb :keyword, locals: { entry: entry }
     end
 
     post '/keyword/:keyword', set_name: true, authenticate: true do
       keyword = params[:keyword] or halt(400)
       is_delete = params[:delete] or halt(400)
-
       unless db.xquery(%| SELECT * FROM entry WHERE keyword = ? |, keyword).first
         halt(404)
       end
-
       db.xquery(%| DELETE FROM entry WHERE keyword = ? |, keyword)
       keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc |)
       settings.pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
