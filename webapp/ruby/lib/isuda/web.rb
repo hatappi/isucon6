@@ -94,10 +94,9 @@ module Isuda
       def htmlify(pattern, content)
         escaped_content = content.gsub(/(#{pattern})/) {|m|
           matched_keyword = $1
-          keyword_url = url("/keyword/#{Rack::Utils.escape_path(matched_keyword)}")
-          escape_html = Rack::Utils.escape_html(matched_keyword)
-
           unless settings.encoded_html_by_keyword[matched_keyword]
+            keyword_url = url("/keyword/#{Rack::Utils.escape_path(matched_keyword)}")
+            escape_html = Rack::Utils.escape_html(matched_keyword)
             settings.encoded_html_by_keyword[matched_keyword] = [keyword_url, escape_html]
           end
 
