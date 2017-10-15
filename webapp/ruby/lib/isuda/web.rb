@@ -10,6 +10,15 @@ require 'rack/utils'
 require 'sinatra/base'
 require 'tilt/erubis'
 
+require 'bullet'
+
+Bullet.enable = true
+Bullet.alert = true
+Bullet.bullet_logger = true
+Bullet.console = true
+
+use Bullet::Rack
+
 module Isuda
   class Web < ::Sinatra::Base
     enable :protection
