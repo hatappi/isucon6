@@ -90,20 +90,11 @@ module Isuda
       end
 
       def htmlify(pattern, content)
-        # pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
-        kw2hash = {}
-        hashed_content = content.gsub(/(#{pattern})/) {|m|
+        escaped_content = content.gsub(/(#{pattern})/) {|m|
           matched_keyword = $1
-          "isuda_#{Digest::SHA1.hexdigest(matched_keyword)}".tap do |hash|
-            kw2hash[matched_keyword] = hash
-          end
+          keyword_url = url("/keyword/#{Rack::Utils.escape_path(matched_keyword)}")
+          '<a href="%s">%s</a>' % [keyword_url, Rack::Utils.escape_html(matched_keyword)]
         }
-        escaped_content = Rack::Utils.escape_html(hashed_content)
-        kw2hash.each do |(keyword, hash)|
-          keyword_url = url("/keyword/#{Rack::Utils.escape_path(keyword)}")
-          anchor = '<a href="%s">%s</a>' % [keyword_url, Rack::Utils.escape_html(keyword)]
-          escaped_content.gsub!(hash, anchor)
-        end
         escaped_content.gsub(/\n/, "<br />\n")
       end
 

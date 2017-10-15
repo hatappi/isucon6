@@ -7,7 +7,7 @@ gem 'mysql2'
 gem 'mysql2-cs-bind'
 gem 'sinatra'
 gem 'unicorn'
-gem 'pry'
+gem 'pry-byebug'
 
 group :development do
   gem 'foreman'

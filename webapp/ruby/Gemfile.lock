@@ -2,6 +2,7 @@ GEM
   remote: https://rubygems.org/
   specs:
     backports (3.6.8)
+    byebug (8.2.5)
     coderay (1.1.1)
     erubis (2.7.0)
     foreman (0.82.0)
@@ -16,6 +17,9 @@ GEM
       coderay (~> 1.1.0)
       method_source (~> 0.8.1)
       slop (~> 3.4)
+    pry-byebug (3.3.0)
+      byebug (~> 8.0)
+      pry (~> 0.10)
     rack (1.6.4)
     rack-protection (1.5.3)
       rack
@@ -48,7 +52,7 @@ DEPENDENCIES
   foreman
   mysql2
   mysql2-cs-bind
-  pry
+  pry-byebug
   sinatra
   sinatra-contrib
   unicorn
