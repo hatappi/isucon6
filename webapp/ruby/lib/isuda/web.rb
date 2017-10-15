@@ -89,8 +89,8 @@ module Isuda
         ! validation['valid']
       end
 
-      def htmlify(keywords, content)
-        pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
+      def htmlify(pattern, content)
+        # pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
         kw2hash = {}
         hashed_content = content.gsub(/(#{pattern})/) {|m|
           matched_keyword = $1
@@ -159,8 +159,10 @@ module Isuda
       |)
       keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc |)
       # starsの検索を、まとめてやれそう。
+      
+      pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
       entries.each do |entry|
-        entry[:html] = htmlify(keywords, entry[:description])
+        entry[:html] = htmlify(pattern, entry[:description])
         entry[:stars] = load_stars(entry[:keyword])
       end
       total_entries = db.xquery(%| SELECT count(*) AS total_entries FROM entry |).first[:total_entries].to_i
@@ -241,8 +243,9 @@ module Isuda
 
       entry = db.xquery(%| select keyword, description from entry where keyword = ? |, keyword).first or halt(404)
       keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc |)
+      pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
       entry[:stars] = load_stars(entry[:keyword])
-      entry[:html] = htmlify(keywords, entry[:description])
+      entry[:html] = htmlify(pattern, entry[:description])
 
       locals = {
         entry: entry,
