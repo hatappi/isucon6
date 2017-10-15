@@ -233,10 +233,7 @@ module Isuda
       pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
       entry[:stars] = stars
       entry[:html] = htmlify(pattern, entry[:description])
-      locals = {
-        entry: entry,
-      }
-      erb :keyword, locals: { }
+      erb :keyword, locals: { entry: entry }
     end
 
     post '/keyword/:keyword', set_name: true, authenticate: true do
