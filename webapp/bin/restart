@@ -12,5 +12,4 @@ systemctl restart mysql
 
 
 systemctl restart isuda.ruby
-systemctl restart isutar.ruby
 journalctl -f
