@@ -28,6 +28,7 @@ module Isuda
     set :session_secret, 'tonymoris'
     set :isupam_origin, ENV['ISUPAM_ORIGIN'] || 'http://localhost:5050'
     set :encoded_html_by_keyword, {}
+    set :pattern, ""
 
     configure :development do
       require 'sinatra/reloader'
@@ -102,7 +103,6 @@ module Isuda
             escape_html = Rack::Utils.escape_html(matched_keyword)
             settings.encoded_html_by_keyword[matched_keyword] = [keyword_url, escape_html]
           end
-
           '<a href="%s">%s</a>' % settings.encoded_html_by_keyword[matched_keyword]
         }
         escaped_content.gsub(/\n/, "<br />\n")
@@ -120,6 +120,9 @@ module Isuda
     get '/initialize' do
       db.xquery(%| DELETE FROM entry WHERE id > 7101 |)
       db.xquery('TRUNCATE star')
+      keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc |)
+      settings.pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
+
       content_type :json
       JSON.generate(result: 'ok')
     end
@@ -154,11 +157,11 @@ module Isuda
         LIMIT #{per_page}
         OFFSET #{per_page * (page - 1)}
       |)
-      keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc |)
       stars = db.xquery(%| select keyword, user_name from star |).to_a
       # starsの検索を、まとめてやれそう。
       
-      pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
+      pattern = settings.pattern
+
       entries.each do |entry|
         entry[:html] = htmlify(pattern, entry[:description])
         entry[:stars] = stars.select{|s| s[:keyword] == entry[:keyword]}
@@ -234,6 +237,9 @@ module Isuda
         author_id = ?, keyword = ?, description = ?, updated_at = NOW()
       |, *bound)
 
+      keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc |)
+      settings.pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
+
       redirect_found '/'
     end
 
@@ -241,8 +247,8 @@ module Isuda
       keyword = params[:keyword] or halt(400)
       stars = db.xquery(%| select keyword, user_name from star where keyword =? |, keyword).to_a
       entry = db.xquery(%| select keyword, description from entry where keyword = ? |, keyword).first or halt(404)
-      keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc |)
-      pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
+      pattern = settings.pattern
+
       entry[:stars] = stars
       entry[:html] = htmlify(pattern, entry[:description])
       erb :keyword, locals: { entry: entry }
@@ -257,6 +263,8 @@ module Isuda
       end
 
       db.xquery(%| DELETE FROM entry WHERE keyword = ? |, keyword)
+      keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc |)
+      settings.pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
 
       redirect_found '/'
     end
