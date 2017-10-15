@@ -231,17 +231,16 @@ module Isuda
 
     get '/keyword/:keyword', set_name: true do
       keyword = params[:keyword] or halt(400)
-      stars = db.xquery(%| select keyword, user_name from star |).to_a
+      stars = db.xquery(%| select keyword, user_name from star where keyword =? |, keyword).to_a
       entry = db.xquery(%| select keyword, description from entry where keyword = ? |, keyword).first or halt(404)
       keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc |)
       pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
       entry[:stars] = stars
       entry[:html] = htmlify(pattern, entry[:description])
-
       locals = {
         entry: entry,
       }
-      erb :keyword, locals: locals
+      erb :keyword, locals: { }
     end
 
     post '/keyword/:keyword', set_name: true, authenticate: true do
