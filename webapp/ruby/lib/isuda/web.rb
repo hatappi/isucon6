@@ -146,7 +146,7 @@ module Isuda
         LIMIT #{per_page}
         OFFSET #{per_page * (page - 1)}
       |)
-      keywords = db.xquery(%| select keyword from order by character_length(keyword)|)
+      keywords = db.xquery(%| select keyword from order by character_length(keyword) desc |)
 
       # starsの検索を、まとめてやれそう。
       entries.each do |entry|
