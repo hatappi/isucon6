@@ -117,6 +117,9 @@ module Isuda
     get '/initialize' do
       db.xquery(%| DELETE FROM entry WHERE id > 7101 |)
       db.xquery('TRUNCATE star')
+      keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc |)
+      settings.pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
+
       content_type :json
       JSON.generate(result: 'ok')
     end
