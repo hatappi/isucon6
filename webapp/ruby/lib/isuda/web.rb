@@ -264,3 +264,6 @@ module Isuda
     end
   end
 end
+
+# work with local
+# Isuda::Web.run!
