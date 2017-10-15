@@ -93,9 +93,8 @@ module Isuda
       def htmlify(pattern, content)
         escaped_content = content.gsub(/(#{pattern})/) {|m|
           matched_keyword = $1
-          escape_url = Rack::Utils.escape_path(matched_keyword)
-          keyword_url = url("/keyword/#{escape_url}")
-          '<a href="%s">%s</a>' % [keyword_url, escape_url]
+          keyword_url = url("/keyword/#{Rack::Utils.escape_path(matched_keyword)}")
+          '<a href="%s">%s</a>' % [keyword_url, Rack::Utils.escape_html(matched_keyword)]
         }
         escaped_content.gsub(/\n/, "<br />\n")
       end
@@ -146,7 +145,7 @@ module Isuda
         LIMIT #{per_page}
         OFFSET #{per_page * (page - 1)}
       |)
-      keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc ||)
+      keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc |)
       stars = db.xquery(%| select keyword, user_name from star |).to_a
       # starsの検索を、まとめてやれそう。
       
@@ -233,7 +232,7 @@ module Isuda
       keyword = params[:keyword] or halt(400)
       stars = db.xquery(%| select keyword, user_name from star where keyword =? |, keyword).to_a
       entry = db.xquery(%| select keyword, description from entry where keyword = ? |, keyword).first or halt(404)
-      keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc ||)
+      keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc |)
       pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
       entry[:stars] = stars
       entry[:html] = htmlify(pattern, entry[:description])
