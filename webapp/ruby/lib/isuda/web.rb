@@ -24,6 +24,7 @@ module Isuda
     set :dsn, ENV['ISUDA_DSN'] || 'dbi:mysql:db=isuda'
     set :session_secret, 'tonymoris'
     set :isupam_origin, ENV['ISUPAM_ORIGIN'] || 'http://localhost:5050'
+    set :encoded_html_by_keyword, {}
 
     configure :development do
       require 'sinatra/reloader'
@@ -94,7 +95,13 @@ module Isuda
         escaped_content = content.gsub(/(#{pattern})/) {|m|
           matched_keyword = $1
           keyword_url = url("/keyword/#{Rack::Utils.escape_path(matched_keyword)}")
-          '<a href="%s">%s</a>' % [keyword_url, Rack::Utils.escape_html(matched_keyword)]
+          escape_html = Rack::Utils.escape_html(matched_keyword)
+
+          unless settings.encoded_html_by_keyword[matched_keyword]
+            settings.encoded_html_by_keyword[matched_keyword] = [keyword_url, escape_html]
+          end
+
+          '<a href="%s">%s</a>' % settings.encoded_html_by_keyword[matched_keyword]
         }
         escaped_content.gsub(/\n/, "<br />\n")
       end
