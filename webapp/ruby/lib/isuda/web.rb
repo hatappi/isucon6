@@ -140,6 +140,18 @@ module Isuda
       JSON.generate(stars: stars)
     end
 
+    post '/stars' do
+      keyword = params[:keyword]
+      db.xquery(%| select keyword, description from entry where keyword = ? |, keyword).first or halt(404)
+      user_name = params[:user]
+      db.xquery(%|
+        INSERT INTO star (keyword, user_name, created_at)
+        VALUES (?, ?, NOW())
+      |, keyword, user_name)
+      content_type :json
+      JSON.generate(result: 'ok')
+    end
+
     get '/', set_name: true do
       per_page = 10
       page = (params[:page] || 1).to_i
