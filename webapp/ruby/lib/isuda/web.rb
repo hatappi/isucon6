@@ -99,11 +99,6 @@ module Isuda
         escaped_content.gsub(/\n/, "<br />\n")
       end
 
-      def uri_escape(str)
-        Rack::Utils.escape_path(str)
-      end
-
-
       def redirect_found(path)
         redirect(path, 302)
       end
