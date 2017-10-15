@@ -9,6 +9,7 @@ gem 'sinatra'
 gem 'unicorn'
 gem 'pry-byebug'
 gem 'stackprof'
+gem 'rack-lineprof'
 
 group :development do
   gem 'foreman'

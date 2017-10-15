@@ -11,9 +11,12 @@ require 'sinatra/base'
 require 'tilt/erubis'
 require 'pry'
 require 'stackprof'
+require 'rack-lineprof'
 
 module Isuda
   class Web < ::Sinatra::Base
+
+    use Rack::Lineprof
     enable :protection
     enable :sessions
 
