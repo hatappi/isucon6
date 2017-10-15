@@ -89,7 +89,7 @@ module Isuda
         ! validation['valid']
       end
 
-      def htmlify(content)
+      def htmlify(keywords, content)
         pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
         kw2hash = {}
         hashed_content = content.gsub(/(#{pattern})/) {|m|
