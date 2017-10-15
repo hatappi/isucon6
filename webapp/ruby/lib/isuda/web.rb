@@ -106,7 +106,7 @@ module Isuda
         escaped_content = content.gsub(/(#{pattern})/) {|m|
           matched_keyword = $1
           keyword_url = if Cache.get_urls(matched_keyword)
-                          url = url("/keyword/#{Rack::Utils.escape_path(keyword)}")
+                          url = url("/keyword/#{Rack::Utils.escape_path(matched_keyword)}")
                           Cache.set_urls(matched_keyword, url)
                           url
                         end
