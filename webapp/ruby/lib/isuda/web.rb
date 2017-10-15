@@ -254,15 +254,14 @@ module Isuda
       keyword = params[:keyword] or halt(400)
       is_delete = params[:delete] or halt(400)
 
-      keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc |)
-      settings.pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
-
       unless db.xquery(%| SELECT * FROM entry WHERE keyword = ? |, keyword).first
         halt(404)
       end
 
       db.xquery(%| DELETE FROM entry WHERE keyword = ? |, keyword)
-
+      keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc |)
+      settings.pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
+      
       redirect_found '/'
     end
   end
