@@ -9,6 +9,7 @@ require 'mysql2-cs-bind'
 require 'rack/utils'
 require 'sinatra/base'
 require 'tilt/erubis'
+require 'pry'
 
 module Isuda
   class Web < ::Sinatra::Base
@@ -111,8 +112,7 @@ module Isuda
       end
 
       def load_stars(keyword)
-        stars = db.xquery(%| select * from star where keyword = ? |, keyword).to_a
-        stars_res['stars'] = JSON.generate(stars: stars)
+        db.xquery(%| select * from star where keyword = ? |, keyword).to_a
       end
 
       def redirect_found(path)
@@ -130,7 +130,6 @@ module Isuda
     get '/stars' do
       keyword = params[:keyword] || ''
       stars = db.xquery(%| select * from star where keyword = ? |, keyword).to_a
-
       content_type :json
       JSON.generate(stars: stars)
     end
@@ -159,13 +158,11 @@ module Isuda
         OFFSET #{per_page * (page - 1)}
       |)
       keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc |)
-
       # starsの検索を、まとめてやれそう。
       entries.each do |entry|
         entry[:html] = htmlify(keywords, entry[:description])
         entry[:stars] = load_stars(entry[:keyword])
       end
-
       total_entries = db.xquery(%| SELECT count(*) AS total_entries FROM entry |).first[:total_entries].to_i
       last_page = (total_entries.to_f / per_page.to_f).ceil
       from = [1, page - 5].max
