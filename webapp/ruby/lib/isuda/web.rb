@@ -103,9 +103,6 @@ module Isuda
         Rack::Utils.escape_path(str)
       end
 
-      def load_stars(keyword)
-        db.xquery(%| select * from star where keyword = ? |, keyword).to_a
-      end
 
       def redirect_found(path)
         redirect(path, 302)
@@ -150,13 +147,15 @@ module Isuda
         OFFSET #{per_page * (page - 1)}
       |)
       keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc |)
+      stars = db.xquery(%| select keyword, user_name from star |).to_a
       # starsの検索を、まとめてやれそう。
       
       pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
       entries.each do |entry|
         entry[:html] = htmlify(pattern, entry[:description])
-        entry[:stars] = load_stars(entry[:keyword])
+        entry[:stars] = stars.select{|s| s[entry[:keyword]]}
       end
+
       total_entries = db.xquery(%| SELECT count(*) AS total_entries FROM entry |).first[:total_entries].to_i
       last_page = (total_entries.to_f / per_page.to_f).ceil
       from = [1, page - 5].max
@@ -232,11 +231,11 @@ module Isuda
 
     get '/keyword/:keyword', set_name: true do
       keyword = params[:keyword] or halt(400)
-
+      stars = db.xquery(%| select keyword, user_name from star |).to_a
       entry = db.xquery(%| select keyword, description from entry where keyword = ? |, keyword).first or halt(404)
       keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc |)
       pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
-      entry[:stars] = load_stars(entry[:keyword])
+      entry[:stars] = stars
       entry[:html] = htmlify(pattern, entry[:description])
 
       locals = {
