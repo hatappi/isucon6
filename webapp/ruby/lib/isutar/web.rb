@@ -6,9 +6,14 @@ require 'mysql2'
 require 'mysql2-cs-bind'
 require 'rack/utils'
 require 'sinatra/base'
+require 'stackprof'
 
 module Isutar
   class Web < ::Sinatra::Base
+    #use ::StackProf::Middleware, enabled: true,
+    #                           mode: :cpu,
+    #                           interval: 1000,
+    #                           save_every: 5
     enable :protection
 
     set :db_user, ENV['ISUTAR_DB_USER'] || 'root'

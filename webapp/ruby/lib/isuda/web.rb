@@ -9,9 +9,16 @@ require 'mysql2-cs-bind'
 require 'rack/utils'
 require 'sinatra/base'
 require 'tilt/erubis'
+require 'stackprof'
 
 module Isuda
   class Web < ::Sinatra::Base
+
+    #    use ::StackProf::Middleware, enabled: true,
+     #                          mode: :cpu,
+      #                         interval: 1000,
+       #                        save_every: 5
+
     enable :protection
     enable :sessions
 
@@ -146,7 +153,7 @@ module Isuda
         LIMIT #{per_page}
         OFFSET #{per_page * (page - 1)}
       |)
-      keywords = db.xquery(%| select keyword from order by character_length(keyword) desc |)
+      keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc |)
 
       # starsの検索を、まとめてやれそう。
       entries.each do |entry|
