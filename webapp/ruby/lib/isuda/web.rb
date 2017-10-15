@@ -225,8 +225,6 @@ module Isuda
       halt(400) if keyword == ''
       description = params[:description]
       halt(400) if is_spam_content(description) || is_spam_content(keyword)
-      keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc |)
-      settings.pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
 
       bound = [@user_id, keyword, description] * 2
       db.xquery(%|
@@ -235,6 +233,9 @@ module Isuda
         ON DUPLICATE KEY UPDATE
         author_id = ?, keyword = ?, description = ?, updated_at = NOW()
       |, *bound)
+
+      keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc |)
+      settings.pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
 
       redirect_found '/'
     end
@@ -261,7 +262,7 @@ module Isuda
       db.xquery(%| DELETE FROM entry WHERE keyword = ? |, keyword)
       keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc |)
       settings.pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
-      
+
       redirect_found '/'
     end
   end
