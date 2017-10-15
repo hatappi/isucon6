@@ -10,6 +10,7 @@ require 'rack/utils'
 require 'sinatra/base'
 require 'tilt/erubis'
 require 'pry'
+require 'stackprof'
 
 module Isuda
   class Web < ::Sinatra::Base
