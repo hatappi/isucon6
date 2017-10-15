@@ -132,6 +132,14 @@ module Isuda
       JSON.generate(result: 'ok')
     end
 
+    get '/stars' do
+      keyword = params[:keyword] || ''
+      stars = db.xquery(%| select * from star where keyword = ? |, keyword).to_a
+
+      content_type :json
+      JSON.generate(stars: stars)
+    end
+
     get '/', set_name: true do
       per_page = 10
       page = (params[:page] || 1).to_i
