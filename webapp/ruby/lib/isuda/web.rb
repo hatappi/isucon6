@@ -153,7 +153,7 @@ module Isuda
       pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
       entries.each do |entry|
         entry[:html] = htmlify(pattern, entry[:description])
-        entry[:stars] = stars.select{|s| s[entry[:keyword]]}
+        entry[:stars] = stars.select{|s| s[:keyword] == entry[:keyword]}
       end
 
       total_entries = db.xquery(%| SELECT count(*) AS total_entries FROM entry |).first[:total_entries].to_i
