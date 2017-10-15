@@ -51,13 +51,21 @@ module Isuda
 
     class Cache
       @@urls = {}
-
-      def self.set_urls(keyword, url)
-        @@urls[keyword] = url
-      end
+      @@htmls = {}
 
       def self.get_urls(keyword)
+        return @@urls[keyword] if @@urls[keyword]
+
+        @@urls[keyword] = Rack::Utils.escape_path(keyword)
         @@urls[keyword]
+      end
+
+
+      def self.get_htmls(keyword)
+        return @@htmls[keyword] if @@htmls[keyword]
+
+        @@htmls[keyword] = Rack::Utils.escape_html(keyword)
+        @@htmls[keyword]
       end
     end
 
@@ -105,13 +113,8 @@ module Isuda
       def htmlify(pattern, content)
         escaped_content = content.gsub(/(#{pattern})/) {|m|
           matched_keyword = $1
-          keyword_url = if Cache.get_urls(matched_keyword)
-                          url = url("/keyword/#{Rack::Utils.escape_path(matched_keyword)}")
-                          Cache.set_urls(matched_keyword, url)
-                          url
-                        end
-
-          '<a href="%s">%s</a>' % [keyword_url, Rack::Utils.escape_html(matched_keyword)]
+          keyword_url = url("/keyword/#{Cache.get_urls(matched_keyword)}")
+          '<a href="%s">%s</a>' % [keyword_url, Cache.get_htmls(matched_keyword)]
         }
         escaped_content.gsub(/\n/, "<br />\n")
       end
