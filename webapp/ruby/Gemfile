@@ -10,6 +10,7 @@ gem 'unicorn'
 gem 'pry-byebug'
 gem 'stackprof'
 gem 'rack-lineprof'
+gem 'dalli'
 
 group :development do
   gem 'foreman'
