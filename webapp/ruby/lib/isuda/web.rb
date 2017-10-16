@@ -239,8 +239,14 @@ module Isuda
         ON DUPLICATE KEY UPDATE
         author_id = ?, keyword = ?, description = ?, updated_at = NOW()
       |, *bound)
+
       keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc |)
       settings.pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
+
+      entries = db.xquery(%| select id, keyword, description from entry where description LIKE ? |, keyword)
+      entries.each do |entry|
+        htmlify(settings.pattern, entry[:description], entry[:id])
+      end
 
       redirect_found '/'
     end
@@ -264,6 +270,11 @@ module Isuda
       db.xquery(%| DELETE FROM entry WHERE keyword = ? |, keyword)
       keywords = db.xquery(%| select keyword from entry order by character_length(keyword) desc |)
       settings.pattern = keywords.map {|k| Regexp.escape(k[:keyword]) }.join('|')
+
+      entries = db.xquery(%| select id, keyword, description from entry where description LIKE ? |, keyword)
+      entries.each do |entry|
+        htmlify(settings.pattern, entry[:description], entry[:id])
+      end
 
       redirect_found '/'
     end
